@@ -18,6 +18,8 @@ go build
 Create the *.env* file containing the variables related to your setup:
 
 ```console
+USERNAME=user
+PASSWORD=secret
 PIN="12345678"
 CERT="certificate.cer"
 TS_URL="http://timestamp.digicert.com"
@@ -55,6 +57,6 @@ The following *curl* command will send a binary file with a POST API request,
 receiving the signed file in the response.
 
 ```console
-curl -sSL -F file=@file.msi https://remote_addr:9115/sign \
+curl -sSL -F file=@file.msi -u user:secret https://remote_addr:9115/sign \
 -o file_signed.msi --cacert cert/cert.pem --fail
 ```

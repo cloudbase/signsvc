@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func ipAddrFromRemoteAddr(s string) string {
@@ -119,18 +122,45 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func basicAuth(next http.Handler, username, password string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+		if !ok || subtle.ConstantTimeCompare(
+			[]byte(user), []byte(username)) != 1 ||
+			subtle.ConstantTimeCompare([]byte(pass),
+				[]byte(password)) != 1 {
+			w.Header().Set(
+				"WWW-Authenticate",
+				`Basic realm="Restricted", charset="UTF-8"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	username := os.Getenv("USERNAME")
+	password := os.Getenv("PASSWORD")
+
 	log.Println("Starting the signature service")
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/sign", uploadHandler)
 
+	authenticatedMux := basicAuth(mux, username, password)
+
 	server := &http.Server{
 		Addr:    ":443",
-		Handler: mux,
+		Handler: authenticatedMux,
 	}
 
-	err := server.ListenAndServeTLS("cert/cert.pem", "cert/key.pem")
+	err = server.ListenAndServeTLS("cert/cert.pem", "cert/key.pem")
 	if err != nil {
 		log.Fatalf("Server failed: %s", err)
 	}

@@ -125,7 +125,13 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/sign", uploadHandler)
 
-	if err := http.ListenAndServe(":80", mux); err != nil {
-		log.Fatal(err)
+	server := &http.Server{
+		Addr:    ":443",
+		Handler: mux,
+	}
+
+	err := server.ListenAndServeTLS("cert/cert.pem", "cert/key.pem")
+	if err != nil {
+		log.Fatalf("Server failed: %s", err)
 	}
 }

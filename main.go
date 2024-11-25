@@ -11,10 +11,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/joho/godotenv"
 )
+
+var mu sync.Mutex
 
 func ipAddrFromRemoteAddr(s string) string {
 	idx := strings.LastIndex(s, ":")
@@ -63,6 +66,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	exPath := filepath.Dir(exFile)
 
 	files := r.MultipartForm.File["file"]
+
+	// Serialize access to the YubiKey
+	mu.Lock()
+	defer mu.Unlock()
 
 	for _, fileHeader := range files {
 		file, err := fileHeader.Open()

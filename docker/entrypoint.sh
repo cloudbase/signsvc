@@ -16,5 +16,5 @@ init(){
 
 init
 
-/usr/bin/ykman piv info
+/usr/bin/ykman piv info || true # Yubikey might not be inserted at that time
 /root/signsvc

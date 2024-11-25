@@ -45,9 +45,7 @@ docker build -t signsvc -f docker/Dockerfile .
 ```console
 docker run -d \
   --device /dev/bus/usb \
-  --device /dev/usb \
   -p 9115:443 \
-  --restart unless-stopped \
   --name signsvc signsvc
 ```
 
